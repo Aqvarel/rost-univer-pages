@@ -54,6 +54,7 @@
     const target = new URL(apiBase || location.origin);
     target.protocol = target.protocol === "https:" ? "wss:" : "ws:";
     target.pathname = "/ws";
+    target.searchParams.set("eventId", currentEvent);
     socket = new WebSocket(target);
     socket.onopen = () => { socket.send(JSON.stringify({ type: "subscribe", eventId: currentEvent })); listener?.({ type: "status", status: "Подключено" }); };
     socket.onmessage = (event) => { try { listener?.(JSON.parse(event.data)); } catch {} };

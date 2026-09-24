@@ -21,6 +21,21 @@
   let toastTimer;
   let chatEvent = "";
   let chatStatus = "Не подключено";
+  let roomClientPromise = null;
+
+  function loadRoomClient() {
+    if (window.RostRoom) return Promise.resolve(window.RostRoom);
+    if (!roomClientPromise) {
+      roomClientPromise = new Promise((resolve, reject) => {
+        const script = document.createElement("script");
+        script.src = "room.js";
+        script.onload = () => window.RostRoom ? resolve(window.RostRoom) : reject(Error("Модуль видеокомнаты не загрузился."));
+        script.onerror = () => reject(Error("Не удалось загрузить модуль видеокомнаты."));
+        document.head.append(script);
+      });
+    }
+    return roomClientPromise;
+  }
   try {
     const saved = localStorage.getItem(KEY);
     if (saved) {
@@ -276,7 +291,7 @@
       (admin() ? "Администратор" : "Участник") +
       '</small></div></aside><main><header class="topbar"><div class="breadcrumb">Ассоциация РОСТ / <span>' +
       esc(nav.find((n) => n[0] === active)?.[2] || "Мероприятие") +
-      '</span></div><div class="actions"><span class="badge neutral">Демо-сервер · данные на этом Mac</span>' +
+      '</span></div><div class="actions"><span class="badge neutral">Защищённая серверная сессия</span>' +
       button("Выйти", "logout", "", "text") +
       '</div></header><div class="content">' +
       (storageError
@@ -1613,7 +1628,8 @@
     if (type === "room-create") { await RostAPI.createRoom(ui.eventId); toast("Комната создана"); return; }
     if (type === "room-join") {
       const access = await RostAPI.roomToken(ui.eventId);
-      await RostRoom.open({ ...access, title: current().name });
+      const roomClient = await loadRoomClient();
+      await roomClient.open({ ...access, title: current().name });
       return;
     }
     if (type === "meeting-view") {
